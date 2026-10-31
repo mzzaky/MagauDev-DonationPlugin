@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<ruleset name="Magaudev Donations">
+  <file>magaudev-donations.php</file><file>uninstall.php</file><file>src</file>
+  <arg name="extensions" value="php"/><arg value="sp"/>
+  <config name="minimum_wp_version" value="6.6"/><config name="testVersion" value="8.1-"/>
+  <rule ref="WordPress-Extra">
+    <exclude name="WordPress.Files.FileName"/>
+    <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+    <exclude name="WordPress.PHP.YodaConditions"/>
+    <exclude name="WordPress.DB.DirectDatabaseQuery"/>
+    <exclude name="WordPress.DB.PreparedSQL.InterpolatedNotPrepared"/>
+    <exclude name="WordPress.DB.PreparedSQL.NotPrepared"/>
+  </rule>
+  <rule ref="PHPCompatibilityWP"/>
+  <rule ref="WordPress.NamingConventions.PrefixAllGlobals"><properties><property name="prefixes" type="array"><element value="MagaudevDonations"/><element value="MGDD"/></property></properties></rule>
+  <rule ref="WordPress.WP.Capabilities"><properties><property name="custom_capabilities" type="array"><element value="mgdd_view"/><element value="mgdd_manage"/><element value="mgdd_settings"/><element value="mgdd_sensitive"/><element value="mgdd_export"/><element value="mgdd_security"/><element value="mgdd_refund"/></property></properties></rule>
+</ruleset>

@@ -1,0 +1,7 @@
+/build/
+/vendor/
+/.tools/
+/test-results/
+/.phpunit.cache/
+/.env
+*.log

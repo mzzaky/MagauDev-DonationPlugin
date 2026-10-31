@@ -1,0 +1,13 @@
+{
+  "name": "magaudev-donations",
+  "version": "1.0.5",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "lint": "node bin/lint.mjs",
+    "test": "php tests/run.php",
+    "build": "node bin/check-release.mjs",
+    "package": "node bin/package.mjs"
+  }
+}
