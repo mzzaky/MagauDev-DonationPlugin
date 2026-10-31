@@ -74,7 +74,7 @@ final class Identity {
 		if ( ! preg_match( '/^[a-f0-9]{64}$/D', $code ) || ( $claim && ! get_current_user_id() ) ) {
 			throw new Fault( 'mgdd_token', esc_html__( 'Kode tidak valid atau sesi akun belum tersedia.', 'magaudev-donations' ), 400 );
 		}
-		return Db::lock(
+		$result = Db::lock(
 			'claim:' . ( get_current_user_id() ? get_current_user_id() : Session::hash() ),
 			static function () use ( $code, $claim ): array {
 				return Db::tx(
@@ -93,6 +93,7 @@ final class Identity {
 							$member      = self::donor( wp_get_current_user()->user_email, wp_get_current_user()->display_name );
 							$destination = (int) $member['id'];
 							Db::update( 'intents', [ 'donor_id' => $destination ], [ 'donor_id' => $donor['id'] ] );
+							Rewards::reassign( (int) $donor['id'], $destination, get_current_user_id() );
 							Db::update(
 								'donors',
 								[
@@ -117,13 +118,20 @@ final class Identity {
 						Audit::log( 'identity', $claim ? 'history.claimed' : 'email.verified', $destination, '', true );
 						$references = $db->get_col( $db->prepare( 'SELECT reference FROM ' . Db::table( 'intents' ) . ' WHERE donor_id=%d ORDER BY id DESC LIMIT 100', $destination ) );
 						return [
-							'verified'   => true,
-							'references' => $references,
+							'verified'      => true,
+							'references'    => $references,
+							'claimed_donor' => ( $claim && ! $donor['user_id'] ) ? $destination : 0,
 						];
 					}
 				);
 			}
 		);
+		// Hand over rewards earned while the history was still a guest profile, after commit.
+		if ( ! empty( $result['claimed_donor'] ) ) {
+			Rewards::after_claim( (int) $result['claimed_donor'] );
+		}
+		unset( $result['claimed_donor'] );
+		return $result;
 	}
 	public static function privacy( string $reference, array $input ): array {
 		$intent = Donations::intent( $reference );

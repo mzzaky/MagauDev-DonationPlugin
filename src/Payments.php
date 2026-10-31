@@ -63,32 +63,51 @@ final class Payments {
 		return $next;
 	}
 	public static function apply( int $id, array $data, string $source ): array {
-		return Db::lock( 'ledger', static fn(): array => self::apply_locked( $id, $data, $source ) );
+		$event  = null;
+		$result = Db::lock(
+			'ledger',
+			static function () use ( $id, $data, $source, &$event ): array {
+				return self::apply_locked( $id, $data, $source, $event );
+			}
+		);
+		// Rewards run after the money transaction and its lock are released and can never fail a payment.
+		if ( (int) $result['gross'] > 0 && 'gateway' === ( $result['source'] ?? 'gateway' ) ) {
+			Rewards::evaluate_safe( $id );
+			if ( $event && $event['refund_delta'] > 0 ) {
+				try {
+					Rewards::note_refund( $id );
+				} catch ( \Throwable $e ) {
+					unset( $e );
+				}
+			}
+		}
+		return $result;
 	}
-	private static function apply_locked( int $id, array $data, string $source ): array {
+	private static function apply_locked( int $id, array $data, string $source, ?array &$event = null ): array {
 		return Db::tx(
-			static function () use ( $id, $data, $source ): array {
+			static function () use ( $id, $data, $source, &$event ): array {
 				$db  = Db::wp();
 				$old = $db->get_row( $db->prepare( 'SELECT * FROM ' . Db::table( 'attempts' ) . ' WHERE id=%d FOR UPDATE', $id ), ARRAY_A );
 				if ( ! $old ) {
 					throw new Fault( 'mgdd_not_found', esc_html__( 'Transaksi tidak ditemukan.', 'magaudev-donations' ), 404 );
 				}
+				if ( 'manual' === ( $old['source'] ?? 'gateway' ) ) {
+					throw new Fault( 'mgdd_manual_gateway', esc_html__( 'Entri manual tidak pernah disinkronkan dengan gateway.', 'magaudev-donations' ), 409 );
+				}
 				$next        = self::transition( $old, self::normalize( $data, $old ) );
 				$fingerprint = hash( 'sha256', wp_json_encode( $next ) );
 				$exists      = $db->get_var( $db->prepare( 'SELECT id FROM ' . Db::table( 'events' ) . ' WHERE attempt_id=%d AND fingerprint=%s', $id, $fingerprint ) );
 				if ( ! $exists ) {
-					Db::insert(
-						'events',
-						[
-							'attempt_id'   => $id,
-							'fingerprint'  => $fingerprint,
-							'source'       => $source,
-							'status'       => $next['status'],
-							'gross_delta'  => $next['gross'] - (int) $old['gross'],
-							'refund_delta' => $next['refunded'] - (int) $old['refunded'],
-							'created_at'   => Db::now(),
-						]
-					);
+					$event = [
+						'attempt_id'   => $id,
+						'fingerprint'  => $fingerprint,
+						'source'       => $source,
+						'status'       => $next['status'],
+						'gross_delta'  => $next['gross'] - (int) $old['gross'],
+						'refund_delta' => $next['refunded'] - (int) $old['refunded'],
+						'created_at'   => Db::now(),
+					];
+					Db::insert( 'events', $event );
 					Db::update( 'attempts', $next + [ 'updated_at' => Db::now() ], [ 'id' => $id ] );
 					Audit::log( 'payment', 'status.' . $next['status'], $id, '', true );
 					if ( $next['gross'] > 0 ) {
@@ -103,6 +122,9 @@ final class Payments {
 		);
 	}
 	public static function sync( array $attempt, string $source = 'status' ): array {
+		if ( 'manual' === ( $attempt['source'] ?? 'gateway' ) ) {
+			throw new Fault( 'mgdd_manual_gateway', esc_html__( 'Entri manual tidak pernah disinkronkan dengan gateway.', 'magaudev-donations' ), 409 );
+		}
 		$data = Gateway::status( $attempt );
 		if ( ! empty( $data['not_found'] ) ) {
 			return $attempt;

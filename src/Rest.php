@@ -67,6 +67,7 @@ final class Rest {
 	public static function routes(): void {
 		self::route( '/config', 'GET', static fn() => Config::public_data() );
 		self::route( '/summary', 'GET', static fn() => Reports::summary() );
+		self::route( '/recent', 'GET', static fn() => [ 'items' => Reports::recent() ] );
 		self::route( '/messages', 'GET', static fn() => [ 'items' => Reports::messages() ] );
 		self::route( '/top', 'GET', static fn( $r ) => Reports::top( $r['period'] ?? 'month', (int) ( $r['page'] ?? 1 ) ) );
 		self::route( '/session', 'POST', [ Session::class, 'bootstrap' ] );
@@ -108,6 +109,16 @@ final class Rest {
 			},
 			'mgdd_settings'
 		);
+		self::route( '/admin/rewards', 'GET', static fn() => Rewards::admin_data(), 'mgdd_settings' );
+		self::route( '/admin/rewards', 'POST', static fn( $r ) => Rewards::save( self::body( $r ) ), 'mgdd_settings' );
+		self::route( '/admin/rewards/log', 'GET', static fn( $r ) => Rewards::log( $r->get_params() ), 'mgdd_view' );
+		self::route( '/admin/rewards/(?P<id>\d+)/retry', 'POST', static fn( $r ) => Rewards::retry( (int) $r['id'] ), 'mgdd_manage' );
+		self::route( '/admin/member-search', 'GET', static fn( $r ) => Manual::search_members( (string) ( $r['q'] ?? '' ) ), 'mgdd_manual' );
+		self::route( '/admin/manual', 'POST', static fn( $r ) => Manual::create( self::body( $r ) ), 'mgdd_manual' );
+		self::route( '/admin/manual/(?P<id>\d+)', 'POST', static fn( $r ) => Manual::update( (int) $r['id'], self::body( $r ) ), 'mgdd_manual' );
+		self::route( '/admin/manual/(?P<id>\d+)/void', 'POST', static fn( $r ) => Manual::void( (int) $r['id'], self::body( $r ) ), 'mgdd_manual' );
+		self::route( '/admin/donors/(?P<id>\d+)/email', 'POST', static fn( $r ) => [ 'email' => Admin::donor_email( (int) $r['id'], (string) ( self::body( $r )['reason'] ?? '' ) ) ], 'mgdd_sensitive' );
+		self::route( '/admin/donors/(?P<id>\d+)/anonymize', 'POST', static fn( $r ) => Admin::anonymize_donor( (int) $r['id'], self::body( $r ) ), 'mgdd_manage' );
 		self::route( '/admin/overview', 'GET', static fn( $r ) => Admin::overview( $r['environment'] ?? 'sandbox' ), 'mgdd_view' );
 		self::route( '/admin/donors/(?P<id>\d+)', 'GET', static fn( $r ) => Admin::donor_detail( (int) $r['id'] ), 'mgdd_view' );
 		foreach ( [ 'transactions', 'donors', 'logs' ] as $kind ) {

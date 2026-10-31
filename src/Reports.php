@@ -3,10 +3,29 @@
 namespace MagaudevDonations;
 
 final class Reports {
+	/** Supporters wall: consenting display names only, newest first; no email, IP or origin marker. */
+	public static function recent(): array {
+		$i    = Db::table( 'intents' );
+		$a    = Db::table( 'attempts' );
+		$rows = Db::wp()->get_results( "SELECT i.alias name,a.gross-a.refunded amount,a.paid_at paid_at FROM $a a INNER JOIN $i i ON i.id=a.intent_id WHERE a.environment='production' AND a.gross>a.refunded AND a.voided_at IS NULL AND i.public_name=1 ORDER BY a.paid_at DESC,a.id DESC LIMIT 12", ARRAY_A );
+		return array_map(
+			static fn( $r ) => [
+				'name'    => $r['name'],
+				'amount'  => (int) $r['amount'],
+				'paid_at' => $r['paid_at'],
+			],
+			$rows
+		);
+	}
+	/** Public answers are computed live; this only bumps a revision and notifies any cache layer. */
+	public static function flush(): void {
+		update_option( Db::option( 'public_rev' ), time(), false );
+		do_action( 'mgdd_public_changed' );
+	}
 	public static function messages(): array {
 		$i = Db::table( 'intents' );
 		$a = Db::table( 'attempts' );
-		return Db::wp()->get_results( "SELECT i.message,CASE WHEN i.public_name=1 THEN i.alias ELSE 'Anonim' END name FROM $i i WHERE i.public_message=1 AND i.moderated=1 AND i.message<>'' AND EXISTS (SELECT 1 FROM $a a WHERE a.intent_id=i.id AND a.environment='production' AND a.gross>a.refunded) ORDER BY i.id DESC LIMIT 12", ARRAY_A );
+		return Db::wp()->get_results( "SELECT i.message,CASE WHEN i.public_name=1 THEN i.alias ELSE 'Anonim' END name FROM $i i WHERE i.public_message=1 AND i.moderated=1 AND i.message<>'' AND EXISTS (SELECT 1 FROM $a a WHERE a.intent_id=i.id AND a.environment='production' AND a.gross>a.refunded AND a.voided_at IS NULL) ORDER BY i.id DESC LIMIT 12", ARRAY_A );
 	}
 	public static function timezone(): \DateTimeZone {
 		$name = apply_filters( 'mgdd_timezone', wp_timezone_string() ? wp_timezone_string() : 'Asia/Makassar' );
@@ -35,7 +54,7 @@ final class Reports {
 		$db    = Db::wp();
 		$a     = Db::table( 'attempts' );
 		$i     = Db::table( 'intents' );
-		$where = "a.environment='production' AND a.gross>a.refunded AND i.public_name=1";
+		$where = "a.environment='production' AND a.gross>a.refunded AND a.voided_at IS NULL AND i.public_name=1";
 		if ( 'month' === $period ) {
 			[ $start, $end ] = self::month();
 			$where          .= $db->prepare( ' AND a.paid_at>=%s AND a.paid_at<%s', $start, $end );

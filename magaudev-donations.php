@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Magaudev Donations
- * Description: Donasi guest/member melalui Midtrans Snap, ledger dan panel magaudev.
- * Version: 1.0.5
+ * Description: Donasi guest/member melalui Midtrans Snap, ledger, hadiah XP/koin dan panel magaudev.
+ * Version: 1.0.6
  * Requires at least: 6.6
  * Requires PHP: 8.1
  * Author: Aithor
@@ -13,7 +13,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-define( 'MGDD_VERSION', '1.0.5' );
+define( 'MGDD_VERSION', '1.0.6' );
 define( 'MGDD_FILE', __FILE__ );
 define( 'MGDD_DIR', __DIR__ );
 spl_autoload_register(

@@ -161,6 +161,7 @@ final class Donations {
 			'client_key'     => $snap ? Config::env( $attempt['environment'], 'client_key' ) : '',
 			'snap_script'    => $snap ? Gateway::host( $attempt['environment'], true ) . '/snap/snap.js' : '',
 			'can_retry'      => in_array( $attempt['status'], [ 'failed', 'expired', 'cancelled' ], true ) && ! $attempt['gross'],
+			'reward'         => Rewards::status_for( $intent ),
 			'updated_at'     => $attempt['updated_at'],
 		];
 	}

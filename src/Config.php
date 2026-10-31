@@ -16,7 +16,8 @@ final class Config {
 			'description'     => 'Dukunganmu membantu operasional dan pengembangan ruang belajar magaudev.',
 			'goal'            => 0,
 			'show_summary'    => true,
-			'faq'             => "Donasi bersifat sukarela dan tidak memberi XP, koin, level atau akses kelas.\nDaftar pendukung hanya memuat kontribusi yang memilih tampil publik.\nRefund memperbaiki kontribusi pada periode pembayaran asal.",
+			'faq'             => "Donasi bersifat sukarela dan tidak pernah memberi akses kelas.\nDaftar pendukung hanya memuat kontribusi yang memilih tampil publik.\nRefund memperbaiki kontribusi pada periode pembayaran asal.",
+			'rewards'         => Rewards::defaults(),
 			'ip_days'         => 30,
 			'log_days'        => 90,
 			'create_limit'    => 6,
@@ -90,7 +91,10 @@ final class Config {
 						throw new Fault( 'mgdd_proxy', esc_html__( 'CIDR proxy tidak valid.', 'magaudev-donations' ) );
 					}
 				}
-				$c['revision'] = $old['revision'] + 1;
+				if ( array_key_exists( 'rewards', $input ) ) {
+						$c['rewards'] = Rewards::sanitize( $c['rewards'], (array) $old['rewards'] );
+				}
+					$c['revision'] = $old['revision'] + 1;
 				if ( ! update_option( Db::option( 'settings' ), $c, false ) ) {
 					throw new Fault( 'mgdd_settings_write', esc_html__( 'Pengaturan gagal disimpan.', 'magaudev-donations' ), 503 );
 				}
@@ -103,6 +107,7 @@ final class Config {
 		$c                      = self::all();
 		$out                    = array_intersect_key( $c, array_flip( [ 'title', 'description', 'minimum', 'maximum', 'presets', 'goal', 'faq', 'show_summary', 'environment', 'channels' ] ) );
 		$out['accepting']       = self::readiness()['accepting'];
+		$out['rewards']         = Rewards::public_data();
 		$out['captcha_sitekey'] = $c['captcha'] && defined( 'MGDD_TURNSTILE_SITEKEY' ) ? MGDD_TURNSTILE_SITEKEY : '';
 		return $out;
 	}

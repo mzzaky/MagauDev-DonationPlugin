@@ -33,8 +33,8 @@ final class Plugin {
 		add_action(
 			'admin_notices',
 			static function (): void {
-				if ( current_user_can( 'mgdd_settings' ) && ( ! defined( 'MAGAUDEV_VERSION' ) || version_compare( MAGAUDEV_VERSION, '1.0.5', '<' ) ) ) {
-					echo '<div class="notice notice-warning"><p>Magaudev Donations: halaman dan panel memerlukan tema magaudev minimal 1.0.5. Backend dan webhook tetap aktif.</p></div>';
+				if ( current_user_can( 'mgdd_settings' ) && ( ! defined( 'MAGAUDEV_VERSION' ) || version_compare( MAGAUDEV_VERSION, '1.0.6', '<' ) ) ) {
+					echo '<div class="notice notice-warning"><p>Magaudev Donations: halaman, panel, dan hadiah donasi memerlukan tema magaudev minimal 1.0.6. Backend dan webhook tetap aktif.</p></div>';
 				}
 			}
 		);

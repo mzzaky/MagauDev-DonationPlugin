@@ -1,6 +1,6 @@
 <?php
 require __DIR__.'/bootstrap.php';
-use MagaudevDonations\{Db,Donations,Limiter,Payments,Session};
+use MagaudevDonations\{Db,Donations,Limiter,Payments,Rewards,Session};
 $_COOKIE[Session::COOKIE]=str_repeat('d',64);
 $_SERVER['REMOTE_ADDR']='127.0.0.4';
 add_filter('pre_http_request',function($pre,$args,$url){
@@ -20,5 +20,10 @@ try {
   $id=(int)($argv[2]??0);$a=Db::wp()->get_row(Db::wp()->prepare('SELECT * FROM '.Db::table('attempts').' WHERE id=%d',$id),ARRAY_A);
   Payments::apply($id,['order_id'=>$a['order_id'],'gross_amount'=>$a['amount'].'.00','transaction_id'=>'concurrent-transaction-'.$id,'transaction_status'=>'settlement','payment_type'=>'qris','merchant_id'=>$a['merchant'],'currency'=>'IDR','settlement_time'=>'2026-10-31 12:00:00','transaction_time'=>'2026-10-31 11:00:00'],'fixture-concurrent');
   echo json_encode(['applied'=>true]);
+ }elseif($action==='reward'){
+  $called=0;
+  add_filter('mgdd_reward_grant',function($result,$payload)use(&$called){$called++;return true;},10,2);
+  Rewards::evaluate((int)($argv[2]??0));
+  echo json_encode(['called'=>$called]);
  }else throw new RuntimeException('Unknown worker');
 }catch(Throwable $e){fwrite(STDERR,get_class($e).': '.$e->getMessage());exit(1);}
