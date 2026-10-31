@@ -8,7 +8,7 @@ Persyaratan: WordPress 6.6+, PHP 8.1+ **64 bit**, sodium, mbstring, MariaDB 10.6
 
 1. Cadangkan database. Unggah `build/magaudev-donations-1.0.5.zip` melalui Plugin → Tambah → Unggah, lalu aktifkan.
 2. Pasang tema magaudev 1.0.5. Plugin membuat tabel `mgdd_*` dengan prefix WordPress. Tidak mengubah skema tema.
-3. Konfigurasi konstanta server sesuai [panduan Midtrans](docs/midtrans-setup.md). Default sandbox dan dijeda. Tidak ada kunci di repo, opsi umum tema atau formulir admin.
+3. Ikuti [panduan menghubungkan Midtrans langkah demi langkah](docs/panduan-menghubungkan-midtrans.md), lalu lihat [referensi teknis Midtrans](docs/midtrans-setup.md) bila diperlukan. Default sandbox dan dijeda. Tidak ada kunci di repo, opsi umum tema atau formulir admin.
 4. Panel magaudev → Donasi → Gateway dan kesehatan: pilih kanal yang benar-benar aktif, periksa kesiapan, lalu buka penerimaan sandbox. Pengaturan → Magaudev Donations di wp-admin menyediakan diagnostik dan tombol jeda darurat ketika tema berganti.
 5. URL: `/donasi/`, `/donasi/status/`, `/top-donatur/`. Status menggunakan sesi atau akun, bukan order ID pada URL. Kode email ditempel pada form dan tidak diletakkan pada URL.
 

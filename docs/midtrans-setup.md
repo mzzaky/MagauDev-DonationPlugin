@@ -1,5 +1,7 @@
 # Setup Midtrans Snap
 
+Untuk petunjuk dashboard dan konfigurasi dari awal, ikuti [panduan menghubungkan Midtrans](panduan-menghubungkan-midtrans.md). Dokumen ini menjadi referensi teknis adapter/plugin.
+
 Ini **Snap checkout**, bukan protokol BI-SNAP. Dokumentasi resmi diperiksa 31 Oktober 2026:
 
 - [Snap Integration Guide](https://docs.midtrans.com/docs/snap-snap-integration-guide)
