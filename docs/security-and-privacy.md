@@ -25,3 +25,9 @@ Audit append-only pada lapisan aplikasi, bukan kebal pemilik database. Payload g
 Blokir CIDR bersifat sementara maksimal 168 jam dan hanya checkout; webhook dan pemulihan admin tidak mengikuti blok. Limiter atomik database berdiri sendiri dari bucket login/kelas. Kegagalan DB tidak dianggap keberhasilan finansial. Tidak ada refund otomatis atau edit status paid manual.
 
 Saat insiden: jeda donasi baru, pertahankan webhook, batasi akses operator, periksa timeline dan dashboard gateway, rotasi key yang relevan, sync order terkait dan rebuild ringkasan bila perlu. Jangan menghapus event untuk menyembunyikan anomali. Nonaktif plugin hanya bila diperlukan dan siapkan rekonsiliasi setelah aktif kembali.
+
+## Tambahan 1.0.6
+
+Hadiah tidak pernah memicu atau menggagalkan pemrosesan uang: evaluasi dijalankan sesudah commit, kegagalan ditangkap dan diaudit. Payload ke adapter tema tidak berisi email, IP atau token. Ledger tema bersifat append-only dengan kunci unik per hadiah sehingga pemberian ganda tidak mungkin walau proses paralel; refund tidak menarik hadiah otomatis (peringatan audit `reward.refund_after_grant`/`reward.void_after_grant`).
+
+Donatur manual memerlukan kapabilitas `mgdd_manual`, nonce REST, rate limit, alasan ≥8 karakter dan, untuk tampil publik, atestasi bahwa donatur setuju. Entri tidak dapat dihapus keras; pembatalan menambah event pembalik dan jejak audit (`manual.created|updated|voided`, tanpa email di alasan). Asal manual tidak pernah muncul pada endpoint publik. Email donatur disamarkan pada daftar admin; mengungkap alamat penuh memerlukan `mgdd_sensitive`, alasan dan diaudit. Pencarian member hanya mengembalikan id, nama tampilan dan login. Ekspor/penghapus data WordPress mencakup entri manual dan baris hadiah; catatan internal dibersihkan saat anonimisasi, ledger keuangan dipertahankan.

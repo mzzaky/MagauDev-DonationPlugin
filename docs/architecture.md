@@ -1,6 +1,6 @@
-# Arsitektur Donasi 1.0.5
+# Arsitektur Donasi 1.0.6
 
-Tanggal: 31 Oktober 2026. Plugin PHP 8.1+/WordPress 6.6+, tema magaudev >=1.0.5. Sumber plugin terpisah dari tema, tanpa Composer runtime. Skema plugin 1; skema tema tidak berubah.
+Tanggal: 31 Oktober 2026. Plugin PHP 8.1+/WordPress 6.6+, tema magaudev >=1.0.5. Sumber plugin terpisah dari tema, tanpa Composer runtime. Skema plugin 2 (sejak 1.0.6); skema tema tidak berubah.
 
 ## Kontrak yang ditetapkan sebelum implementasi
 
@@ -37,3 +37,11 @@ WP-Cron batch bounded dengan lease, retry/backoff; webhook tetap hidup saat paus
 ## Acceptance gates
 
 Aktivasi/migrasi ulang aman; money/state/idempotency/signature/IDOR/CSRF/izin/identitas/proxy/enkripsi/refund/ranking diuji dengan gateway double dan DB terisolasi. Tema typecheck/lint/test/contrast/build/release/zip. Browser 360/768/1280 Magma/Krem dan reduced motion. Sandbox asli/webhook HTTPS menunggu kredensial dan endpoint publik; produksi tidak diuji. ZIP terpisah, commit dan push branch terpisah setelah pemeriksaan.
+
+## Skema 2 dan hadiah (1.0.6)
+
+Migrasi idempoten (`dbDelta`) menambah `attempts.source` (`gateway|manual`), `voided_at`, `reward` (layak hadiah) dan `revision`; `donors.is_manual` (kolom `manual` ditolak MySQL 8.4 karena kata cadangan); `intents.note`; serta tabel `rewards`. Kapabilitas `mgdd_manual` diberikan ke `administrator` dan `mgd_admin`.
+
+**Hadiah.** `Payments::apply()` memanggil `Rewards::evaluate_safe()` setelah transaksi dan kunci ledger dilepas; kegagalan hanya menghasilkan audit `reward.error`. Evaluasi hanya untuk `environment='production'`, bruto dikurangi refund > 0, bukan entri void, dan entri manual hanya bila bertanda hadiah dan ada member tertaut. `single` memberi tingkat tertinggi yang terpenuhi (hanya donasi sejak fitur diaktifkan); `total` memberi tiap ambang yang baru terlewati sekali per pemilik (`owner_key`: `a<attempt>`, `u<user>` atau `d<donor>`). Donor member menghasilkan baris `pending` lalu diserahkan ke `mgdd_reward_grant` di bawah kunci per hadiah; tamu menghasilkan `pending_claim` yang dipindahkan ke profil member saat klaim riwayat (`Identity::consume`). Refund sesudah hadiah dicatat sebagai peringatan; ledger tidak menarik hadiah. Rekonsiliasi mencoba ulang `pending|failed` (maks. 8 percobaan, backoff).
+
+**Donatur manual.** Disimpan pada `attempts` dengan `merchant='manual'`, `order_id='manual-<acak>'`, `transaction_id NULL`, `status='paid'`, `sync_count=120`. Perubahan nominal selalu event penyesuaian `gross_delta` (bertanda), void menambah event pembalik sehingga `Payments::rebuild()` menghasilkan angka identik. Jalur gateway (`sync`, rekonsiliasi, kwitansi otomatis, `apply`) menolak atau melewati `source='manual'`.
